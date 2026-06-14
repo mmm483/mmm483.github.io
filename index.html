@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>シフト作成</title>
+<style>
+  :root{
+    --ink:#1f2933; --ink2:#52606d; --line:#dfe3e8; --paper:#f5f6f8; --card:#ffffff;
+    --teal:#0f766e; --teal-d:#0b5d57; --warn:#b45309; --warn-bg:#fef3c7; --warn-line:#f0c777;
+    --day:#1d4ed8; --day-bg:#e0e8fd; --late:#7c3aed; --late-bg:#ede4fb;
+    --night:#1f2933; --night-bg:#d7dbe0; --off:#9aa5b1; --off-bg:#eef1f4;
+    --ok:#157347;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5}
+  header{background:var(--ink);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:30}
+  header h1{margin:0;font-size:17px;letter-spacing:.04em;font-weight:700}
+  header .sub{font-size:12px;color:#cbd2d9;margin-top:2px}
+  .tabs{display:flex;gap:4px;background:var(--card);border-bottom:1px solid var(--line);padding:0 8px;position:sticky;top:54px;z-index:29;overflow-x:auto}
+  .tabs button{flex:0 0 auto;border:none;background:none;padding:12px 14px;font-size:13px;color:var(--ink2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:600}
+  .tabs button.active{color:var(--teal);border-bottom-color:var(--teal)}
+  main{padding:14px;max-width:1400px;margin:0 auto}
+  .panel{display:none}
+  .panel.active{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+  .card h2{margin:0 0 4px;font-size:15px}
+  .card p.hint{margin:0 0 12px;color:var(--ink2);font-size:12.5px}
+  label{font-size:12px;color:var(--ink2);display:block;margin-bottom:3px}
+  input,select{font:inherit;padding:8px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);width:100%}
+  input[type=checkbox]{width:auto}
+  input:focus,select:focus{outline:2px solid var(--teal);outline-offset:-1px;border-color:var(--teal)}
+  button.btn{font:inherit;font-weight:600;padding:9px 14px;border-radius:8px;border:1px solid var(--teal);background:var(--teal);color:#fff;cursor:pointer}
+  button.btn:hover{background:var(--teal-d)}
+  button.btn.sec{background:#fff;color:var(--teal)}
+  button.btn.sec:hover{background:#f0fbf9}
+  button.btn.danger{background:#fff;color:#b42318;border-color:#e7b4ae}
+  button.btn.ghost{background:none;border-color:var(--line);color:var(--ink2)}
+  button.mini{font:inherit;font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer}
+  button.mini:hover{background:var(--paper)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .row>div{flex:1;min-width:120px}
+  table{border-collapse:collapse;width:100%}
+  .ppl-table th,.ppl-table td{border:1px solid var(--line);padding:7px 8px;text-align:left;font-size:13px;vertical-align:middle}
+  .ppl-table th{background:var(--paper);font-size:12px;color:var(--ink2);font-weight:600;position:sticky;top:0}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;font-weight:700}
+  .tag.emp{background:#dcfce7;color:#166534}
+  .tag.non{background:#fee2e2;color:#991b1b}
+  .scroll{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff;-webkit-overflow-scrolling:touch}
+  .grid{border-collapse:collapse;white-space:nowrap}
+  .grid th,.grid td{border:1px solid var(--line);padding:0;text-align:center;font-size:12px}
+  .grid thead th{background:var(--paper);padding:4px 5px;font-weight:600;color:var(--ink2);position:sticky;top:0;z-index:5}
+  .grid th.sun{color:#b42318}.grid th.sat{color:#1d4ed8}
+  .grid thead th.short{background:#fde7ec;color:#be123c;box-shadow:inset 0 -3px 0 #e11d48}
+  .grid thead th.short .shortmark{display:inline-block;font-size:10px;font-weight:800;color:#fff;background:#e11d48;border-radius:8px;padding:0 5px;margin-top:1px}
+  .grid td.name,.grid th.name{position:sticky;left:0;background:#fff;text-align:left;padding:5px 8px;font-weight:600;z-index:6;min-width:96px;border-right:2px solid var(--line)}
+  .grid thead th.name{z-index:8;background:var(--paper)}
+  .grid td.req{background:#fafbfc;font-weight:600;color:var(--ink2)}
+  .grid select.cell{border:none;border-radius:0;width:100%;min-width:54px;padding:6px 2px;text-align:center;text-align-last:center;font-weight:700;font-size:12px;background:transparent;cursor:pointer;appearance:none}
+  .cell-day{background:var(--day-bg);color:var(--day)}
+  .cell-late{background:var(--late-bg);color:var(--late)}
+  .cell-night{background:var(--night-bg);color:var(--night)}
+  .cell-daynight{background:linear-gradient(100deg,var(--day-bg) 0 48%,var(--night-bg) 52% 100%);color:var(--night)}
+  .cell-off{background:var(--off-bg);color:var(--off)}
+  .cell-empty{background:#fff;color:#cbd2d9}
+  .cell-req{background:var(--warn-bg)}
+  .cell-bad{box-shadow:inset 0 0 0 2px #e11d48}
+  .countcell.bad{background:#fde7ec;color:#be123c;font-weight:800}
+  .countcell.ok{color:var(--ink2)}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--ink2);margin:10px 0}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .sw{width:14px;height:14px;border-radius:3px;display:inline-block}
+  .issues{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+  .issues h3{margin:0 0 6px;font-size:13.5px;color:var(--warn)}
+  .issues ul{margin:0;padding-left:18px}
+  .issues li{font-size:12.5px;margin:2px 0;color:#6b4708}
+  .good{background:#e7f6ec;border:1px solid #b6e0c4;border-radius:10px;padding:10px 14px;margin-bottom:14px;color:var(--ok);font-weight:600;font-size:13px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .chip{font-size:11.5px;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:3px 9px;display:inline-flex;align-items:center;gap:6px}
+  .chip b{font-weight:700}
+  .chip button{border:none;background:none;color:#b42318;cursor:pointer;font-size:13px;line-height:1;padding:0}
+  .daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .daygrid .dh{text-align:center;font-size:11px;color:var(--ink2);font-weight:700;padding:4px 0}
+  .daygrid .dh.sun{color:#b42318}.daygrid .dh.sat{color:#1d4ed8}
+  .dcell{border:1px solid var(--line);border-radius:7px;min-height:42px;padding:4px;font-size:12px;cursor:pointer;background:#fff;user-select:none}
+  .dcell.blank{background:var(--paper);border-style:dashed;cursor:default}
+  .dcell .dn{font-size:11px;color:var(--ink2)}
+  .dcell.off{background:#fde7ec;border-color:#f3b8c4}
+  .dcell.must{background:#e0e8fd;border-color:#aac2f5}
+  .small{font-size:12px;color:var(--ink2)}
+  .req-table td,.req-table th{border:1px solid var(--line);padding:5px;text-align:center;font-size:12.5px}
+  .req-table input{width:48px;padding:5px 4px;text-align:center}
+  .req-table th{background:var(--paper);color:var(--ink2);font-size:11.5px}
+  .req-table td.dlabel{text-align:left;white-space:nowrap;font-weight:600;padding-left:8px}
+  .req-table tr.ovr td.dlabel{color:var(--teal)}
+  .topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .topbar .grow{flex:1}
+  .muted{color:var(--ink2)}
+  .nowrap{white-space:nowrap}
+  details.adv{margin-top:6px}
+  details.adv summary{cursor:pointer;color:var(--teal);font-size:12.5px;font-weight:600}
+  .pillrow{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}
+  .pillrow label{display:flex;gap:5px;align-items:center;font-size:12.5px;color:var(--ink);margin:0}
+  .mcard{border:1px solid var(--line);border-radius:9px;padding:11px 12px;margin-bottom:10px;background:#fff}
+  .mcard .pillrow{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line)}
+  .mcard .delwrap{text-align:right;margin-top:11px}
+  .mcard .delwrap button{padding:7px 14px}
+  @media(max-width:600px){
+    main{padding:10px}
+    .card{padding:11px}
+    .row>div{min-width:100%}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>シフト作成</h1>
+  <div class="sub">自動生成 → 赤い警告を手動で調整 ・ データはこの端末に保存</div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="people" class="active">メンバー</button>
+  <button data-tab="month">月・希望休</button>
+  <button data-tab="req">必要人数</button>
+  <button data-tab="sheet">シフト表</button>
+</nav>
+
+<main>
+  <!-- ============ PEOPLE ============ -->
+  <section class="panel active" id="panel-people">
+    <div class="card">
+      <h2>メンバーを追加</h2>
+      <p class="hint">社員か社員以外かを選び、その人ができる勤務（日勤・遅番・当直）にチェック。出勤日数は「ぴったり合わせたい目標日数」です。当直回数の上限は希望を超えて当直に入れないための上限。</p>
+      <div class="row">
+        <div style="flex:1.4"><label>名前</label><input id="p-name" placeholder="例）山田"></div>
+        <div><label>区分</label>
+          <select id="p-kind"><option value="emp">社員</option><option value="non">社員以外</option></select>
+        </div>
+        <div><label>出勤日数（ぴったり）</label><input id="p-target" type="number" min="0" value="20"></div>
+        <div><label>当直回数の上限</label><input id="p-nightmax" type="number" min="0" value="0"></div>
+      </div>
+      <div class="pillrow">
+        <label><input type="checkbox" id="p-day" checked> 日勤できる</label>
+        <label><input type="checkbox" id="p-late"> 遅番できる</label>
+        <label><input type="checkbox" id="p-night"> 当直できる</label>
+        <label><input type="checkbox" id="p-spec"> 当直専門（優先して当直に入れる）</label>
+      </div>
+      <div style="margin-top:12px"><button class="btn" id="p-add">追加する</button></div>
+    </div>
+
+    <div class="card">
+      <h2>メンバー一覧</h2>
+      <div id="ppl-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ MONTH ============ -->
+  <section class="panel" id="panel-month">
+    <div class="card">
+      <h2>対象の月</h2>
+      <div class="row">
+        <div style="max-width:160px"><label>年</label><input id="m-year" type="number"></div>
+        <div style="max-width:140px"><label>月</label>
+          <select id="m-month"></select>
+        </div>
+        <div style="max-width:220px"><label>社員以外の遅番 上限（月）</label><input id="m-nonlate" type="number" min="0" value="2"></div>
+      </div>
+      <p class="hint" style="margin-top:10px">遅番は基本社員が担当し、社員以外が遅番に入るのは月にこの回数まで（0なら入れない月）。</p>
+    </div>
+
+    <div class="card">
+      <h2>希望休 と 出勤指定</h2>
+      <p class="hint">人を選び、カレンダーの日をタップで切り替え。<b>休=絶対に休み</b>。もう一度タップで<b>必ず出勤（会議・行事など）</b>。もう一度で解除。</p>
+      <div class="row" style="margin-bottom:10px">
+        <div style="max-width:260px"><label>メンバー</label><select id="cal-person"></select></div>
+      </div>
+      <div class="legend">
+        <span><span class="sw" style="background:#fde7ec;border:1px solid #f3b8c4"></span>休み（希望休）</span>
+        <span><span class="sw" style="background:#e0e8fd;border:1px solid #aac2f5"></span>必ず出勤</span>
+      </div>
+      <div id="cal-wrap"></div>
+    </div>
+  </section>
+
+  <!-- ============ REQUIREMENTS ============ -->
+  <section class="panel" id="panel-req">
+    <div class="card">
+      <h2>普段の必要人数（デフォルト）</h2>
+      <p class="hint">曜日ごとの基本の必要人数。日曜は日勤1人など。下の表で特定の日だけ上書きできます。</p>
+      <table class="req-table" style="max-width:520px">
+        <thead><tr><th>曜日</th><th>日勤</th><th>遅番</th><th>当直</th></tr></thead>
+        <tbody id="default-req"></tbody>
+      </table>
+      <p class="small" style="margin-top:8px">※ 日勤は「最低人数」。1〜2人など幅がある場合は最大人数を別途指定できます（詳細）。</p>
+      <details class="adv"><summary>日勤の最大人数（幅）を設定</summary>
+        <table class="req-table" style="max-width:360px;margin-top:8px">
+          <thead><tr><th>曜日</th><th>日勤 最大</th></tr></thead>
+          <tbody id="default-daymax"></tbody>
+        </table>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>特定の日だけ変更（上書き）</h2>
+      <p class="hint">「日曜以外で日勤が1人の日」などはここで該当日の数字を変えてください。空欄ならデフォルトを使用。緑の行は上書き中。</p>
+      <div class="scroll" style="max-height:60vh">
+        <table class="req-table" id="override-req"></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SHEET ============ -->
+  <section class="panel" id="panel-sheet">
+    <div class="topbar">
+      <div><button class="btn" id="gen-btn">自動で作成</button></div>
+      <div><button class="btn sec" id="clear-btn">表を空にする</button></div>
+      <div class="grow"></div>
+      <div class="small muted nowrap" id="sheet-month-label"></div>
+    </div>
+
+    <div id="issues-area"></div>
+
+    <div class="legend">
+      <span><span class="sw cell-day"></span>日勤 9-18</span>
+      <span><span class="sw cell-late"></span>遅番 10-19</span>
+      <span><span class="sw cell-night"></span>当直 17-9</span>
+      <span><span class="sw cell-off"></span>休</span>
+      <span><span class="sw cell-req" style="border:1px solid var(--warn-line)"></span>必ず出勤の日</span>
+      <span><span class="sw" style="background:#fff;box-shadow:inset 0 0 0 2px #e11d48"></span>要確認</span>
+    </div>
+
+    <div class="scroll" id="sheet-wrap"></div>
+    <p class="small muted" style="margin-top:8px">セルをタップで勤務を変更できます。下の行に各日の人数、右に各人の出勤日数（目標との差）を表示します。</p>
+  </section>
+</main>
+
+<script>
+"use strict";
+/* ---------------- constants ---------------- */
+const SHIFTS = {
+  off:  {label:"休", cls:"cell-off"},
+  day:  {label:"日勤", cls:"cell-day"},
+  late: {label:"遅番", cls:"cell-late"},
+  night:{label:"当直", cls:"cell-night"},
+  daynight:{label:"日+当", cls:"cell-daynight"},
+};
+const SHIFT_ORDER = ["", "day", "late", "night", "off"]; // "" = 未割当(空)
+const WD = ["日","月","火","水","木","金","土"];
+const STORE_KEY = "shiftapp.v1";
+
+/* ---------------- state ---------------- */
+let state = loadState();
+
+function defaultState(){
+  const now = new Date();
+  return {
+    people: [],
+    year: now.getFullYear(),
+    month: now.getMonth()+1, // 1-12
+    nonEmpLateMax: 2,
+    requestedOff: {},  // pid -> [dateStr]
+    mustWork: {},      // pid -> [dateStr]
+    defReq: {          // by weekday 0..6 (Sun..Sat): {day,late,night} ; dayMax separate
+      0:{day:1,late:1,night:1},1:{day:2,late:1,night:1},2:{day:2,late:1,night:1},
+      3:{day:2,late:1,night:1},4:{day:2,late:1,night:1},5:{day:2,late:1,night:1},6:{day:2,late:1,night:1}
+    },
+    defDayMax:{0:1,1:2,2:2,3:2,4:2,5:2,6:2},
+    override:{},       // dateStr -> {day,late,night,dayMax} (any subset)
+    schedule:{}        // dateStr -> { pid: shiftKey }
+  };
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return defaultState();
+    const s = JSON.parse(raw);
+    const d = defaultState();
+    return Object.assign(d, s);
+  }catch(e){ return defaultState(); }
+}
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch(e){ /* storage may be unavailable when opened inside preview; app still works in-session */ }
+}
+
+/* ---------------- helpers ---------------- */
+function uid(){ return "p"+Math.random().toString(36).slice(2,9); }
+function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
+function dstr(y,m,d){ return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
+function weekday(y,m,d){ return new Date(y,m-1,d).getDay(); }
+function personById(id){ return state.people.find(p=>p.id===id); }
+function reqFor(ds){
+  const [y,m,d]=ds.split("-").map(Number);
+  const wd=weekday(y,m,d);
+  const base=state.defReq[wd], baseMax=state.defDayMax[wd];
+  const ov=state.override[ds]||{};
+  return {
+    day:  ov.day  ??base.day,
+    late: ov.late ??base.late,
+    night:ov.night??base.night,
+    dayMax: ov.dayMax ?? Math.max(baseMax, (ov.day??base.day))
+  };
+}
+function monthDates(){
+  const out=[]; const n=daysInMonth(state.year,state.month);
+  for(let d=1;d<=n;d++) out.push(dstr(state.year,state.month,d));
+  return out;
+}
+function isOff(pid,ds){ return (state.requestedOff[pid]||[]).includes(ds); }
+function isMust(pid,ds){ return (state.mustWork[pid]||[]).includes(ds); }
+function setSched(ds,pid,val){
+  if(!state.schedule[ds]) state.schedule[ds]={};
+  if(val==="" ) delete state.schedule[ds][pid];
+  else state.schedule[ds][pid]=val;
+}
+function getSched(ds,pid){ return (state.schedule[ds]||{})[pid]||""; }
+
+/* ============================================================
+   RENDER: PEOPLE
+============================================================ */
+function renderPeople(){
+  const t=document.getElementById("ppl-list");
+  if(state.people.length===0){
+    t.innerHTML=`<p class="muted" style="margin:6px 0">まだメンバーがいません。上から追加してください。</p>`;
+    return;
+  }
+  t.innerHTML=state.people.map(p=>`
+    <div class="mcard">
+      <div class="row">
+        <div style="flex:1.6;min-width:140px"><label>名前</label>
+          <input data-edit="name" data-id="${p.id}" value="${escapeHtml(p.name)}"></div>
+        <div style="flex:0 0 116px;min-width:116px"><label>区分</label>
+          <select data-edit="kind" data-id="${p.id}">
+            <option value="emp" ${p.kind==="emp"?"selected":""}>社員</option>
+            <option value="non" ${p.kind==="non"?"selected":""}>社員以外</option></select></div>
+        <div style="flex:0 0 108px;min-width:108px"><label>出勤日数</label>
+          <input data-edit="target" data-id="${p.id}" type="number" min="0" value="${p.target}"></div>
+        <div style="flex:0 0 108px;min-width:108px"><label>当直上限</label>
+          <input data-edit="nightMax" data-id="${p.id}" type="number" min="0" value="${p.nightMax}"></div>
+      </div>
+      <div class="pillrow">
+        <label><input type="checkbox" data-cap="canDay"   data-id="${p.id}" ${p.canDay?"checked":""}> 日勤</label>
+        <label><input type="checkbox" data-cap="canLate"  data-id="${p.id}" ${p.canLate?"checked":""}> 遅番</label>
+        <label><input type="checkbox" data-cap="canNight" data-id="${p.id}" ${p.canNight?"checked":""}> 当直</label>
+        <label style="${p.canNight?"":"opacity:.45"}"><input type="checkbox" data-cap="spec" data-id="${p.id}" ${p.spec?"checked":""} ${p.canNight?"":"disabled"}> 当直専門</label>
+      </div>
+      <div class="delwrap"><button class="btn danger" data-del="${p.id}">削除</button></div>
+    </div>`).join("");
+
+  t.querySelectorAll("[data-edit]").forEach(el=>{
+    el.addEventListener("change",()=>{
+      const p=personById(el.dataset.id); if(!p)return;
+      const f=el.dataset.edit;
+      if(f==="target"||f==="nightMax") p[f]=Math.max(0,parseInt(el.value)||0);
+      else p[f]=el.value;
+      save();
+      if(f==="kind"){ renderPeople(); }
+      renderCalPersonSelect();
+    });
+  });
+  t.querySelectorAll("[data-cap]").forEach(el=>{
+    el.addEventListener("change",()=>{
+      const p=personById(el.dataset.id); if(!p)return;
+      p[el.dataset.cap]=el.checked;
+      if(el.dataset.cap==="canNight" && !el.checked) p.spec=false;
+      save(); renderPeople();
+    });
+  });
+  t.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{
+    const p=personById(b.dataset.del);
+    if(!confirm(`「${p?p.name:""}」を削除しますか？`)) return;
+    const id=b.dataset.del;
+    state.people=state.people.filter(x=>x.id!==id);
+    delete state.requestedOff[id]; delete state.mustWork[id];
+    monthDates().forEach(ds=>{ if(state.schedule[ds]) delete state.schedule[ds][id]; });
+    save(); renderPeople(); renderCalPersonSelect(); renderSheet();
+  }));
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+document.getElementById("p-add").addEventListener("click",()=>{
+  const name=document.getElementById("p-name").value.trim();
+  if(!name){ alert("名前を入れてください"); return; }
+  const night=document.getElementById("p-night").checked;
+  state.people.push({
+    id:uid(), name,
+    kind:document.getElementById("p-kind").value,
+    target:Math.max(0,parseInt(document.getElementById("p-target").value)||0),
+    nightMax:Math.max(0,parseInt(document.getElementById("p-nightmax").value)||0),
+    canDay:document.getElementById("p-day").checked,
+    canLate:document.getElementById("p-late").checked,
+    canNight:night,
+    spec:night && document.getElementById("p-spec").checked
+  });
+  document.getElementById("p-name").value="";
+  save(); renderPeople(); renderCalPersonSelect();
+});
+
+/* ============================================================
+   RENDER: MONTH / CALENDAR
+============================================================ */
+function renderMonthControls(){
+  document.getElementById("m-year").value=state.year;
+  const ms=document.getElementById("m-month");
+  if(!ms.options.length){ for(let i=1;i<=12;i++){const o=document.createElement("option");o.value=i;o.textContent=i+"月";ms.appendChild(o);} }
+  ms.value=state.month;
+  document.getElementById("m-nonlate").value=state.nonEmpLateMax;
+}
+document.getElementById("m-year").addEventListener("change",e=>{state.year=parseInt(e.target.value)||state.year;save();afterMonthChange();});
+document.getElementById("m-month").addEventListener("change",e=>{state.month=parseInt(e.target.value);save();afterMonthChange();});
+document.getElementById("m-nonlate").addEventListener("change",e=>{state.nonEmpLateMax=Math.max(0,parseInt(e.target.value)||0);save();});
+function afterMonthChange(){ renderCalendar(); renderOverrideTable(); renderSheet(); updateSheetLabel(); }
+
+function renderCalPersonSelect(){
+  const sel=document.getElementById("cal-person");
+  const cur=sel.value;
+  sel.innerHTML=state.people.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}（${p.kind==="emp"?"社員":"社員以外"}）</option>`).join("");
+  if(cur && state.people.some(p=>p.id===cur)) sel.value=cur;
+  renderCalendar();
+}
+document.getElementById("cal-person").addEventListener("change",renderCalendar);
+
+function renderCalendar(){
+  const wrap=document.getElementById("cal-wrap");
+  const pid=document.getElementById("cal-person").value;
+  if(!pid){ wrap.innerHTML=`<p class="muted">先にメンバーを追加してください。</p>`; return; }
+  const y=state.year,m=state.month,n=daysInMonth(y,m);
+  const first=weekday(y,m,1);
+  let h=`<div class="daygrid">`;
+  WD.forEach((w,i)=>h+=`<div class="dh ${i===0?'sun':i===6?'sat':''}">${w}</div>`);
+  for(let i=0;i<first;i++) h+=`<div class="dcell blank"></div>`;
+  for(let d=1;d<=n;d++){
+    const ds=dstr(y,m,d);
+    let st=""; if(isOff(pid,ds))st="off"; else if(isMust(pid,ds))st="must";
+    h+=`<div class="dcell ${st}" data-ds="${ds}"><div class="dn">${d}</div>${st==="off"?"休":st==="must"?"出勤":""}</div>`;
+  }
+  h+=`</div>`;
+  wrap.innerHTML=h;
+  wrap.querySelectorAll(".dcell[data-ds]").forEach(c=>c.addEventListener("click",()=>{
+    const ds=c.dataset.ds;
+    const off=state.requestedOff[pid]||(state.requestedOff[pid]=[]);
+    const must=state.mustWork[pid]||(state.mustWork[pid]=[]);
+    const inOff=off.includes(ds), inMust=must.includes(ds);
+    if(!inOff && !inMust){ off.push(ds); }                 // none -> off
+    else if(inOff){ rm(off,ds); must.push(ds); }           // off -> must
+    else { rm(must,ds); }                                  // must -> none
+    save(); renderCalendar();
+  }));
+}
+function rm(arr,v){const i=arr.indexOf(v); if(i>=0)arr.splice(i,1);}
+
+/* ============================================================
+   RENDER: REQUIREMENTS
+============================================================ */
+function renderDefaultReq(){
+  const tb=document.getElementById("default-req");
+  tb.innerHTML=WD.map((w,i)=>`<tr>
+    <td class="dlabel">${w}曜</td>
+    <td><input type="number" min="0" data-dr="${i}" data-k="day" value="${state.defReq[i].day}"></td>
+    <td><input type="number" min="0" data-dr="${i}" data-k="late" value="${state.defReq[i].late}"></td>
+    <td><input type="number" min="0" data-dr="${i}" data-k="night" value="${state.defReq[i].night}"></td>
+  </tr>`).join("");
+  tb.querySelectorAll("[data-dr]").forEach(el=>el.addEventListener("change",()=>{
+    state.defReq[el.dataset.dr][el.dataset.k]=Math.max(0,parseInt(el.value)||0);
+    save(); renderOverrideTable(); renderSheet();
+  }));
+  const tb2=document.getElementById("default-daymax");
+  tb2.innerHTML=WD.map((w,i)=>`<tr><td class="dlabel">${w}曜</td>
+    <td><input type="number" min="0" data-dm="${i}" value="${state.defDayMax[i]}"></td></tr>`).join("");
+  tb2.querySelectorAll("[data-dm]").forEach(el=>el.addEventListener("change",()=>{
+    state.defDayMax[el.dataset.dm]=Math.max(0,parseInt(el.value)||0); save(); renderSheet();
+  }));
+}
+function renderOverrideTable(){
+  const t=document.getElementById("override-req");
+  let h=`<thead><tr><th>日付</th><th>日勤</th><th>日勤最大</th><th>遅番</th><th>当直</th><th></th></tr></thead><tbody>`;
+  monthDates().forEach(ds=>{
+    const [y,m,d]=ds.split("-").map(Number); const wd=weekday(y,m,d);
+    const ov=state.override[ds]||{}; const r=reqFor(ds);
+    const isOvr=Object.keys(ov).length>0;
+    h+=`<tr class="${isOvr?'ovr':''}">
+      <td class="dlabel ${wd===0?'':''}">${m}/${d}(${WD[wd]})</td>
+      <td><input type="number" min="0" placeholder="${state.defReq[wd].day}" data-ov="${ds}" data-k="day" value="${ov.day??""}"></td>
+      <td><input type="number" min="0" placeholder="${r.dayMax}" data-ov="${ds}" data-k="dayMax" value="${ov.dayMax??""}"></td>
+      <td><input type="number" min="0" placeholder="${state.defReq[wd].late}" data-ov="${ds}" data-k="late" value="${ov.late??""}"></td>
+      <td><input type="number" min="0" placeholder="${state.defReq[wd].night}" data-ov="${ds}" data-k="night" value="${ov.night??""}"></td>
+      <td>${isOvr?`<button class="mini" data-ovclear="${ds}">戻す</button>`:""}</td>
+    </tr>`;
+  });
+  h+=`</tbody>`; t.innerHTML=h;
+  t.querySelectorAll("[data-ov]").forEach(el=>el.addEventListener("change",()=>{
+    const ds=el.dataset.ov,k=el.dataset.k;
+    if(!state.override[ds]) state.override[ds]={};
+    if(el.value==="") delete state.override[ds][k];
+    else state.override[ds][k]=Math.max(0,parseInt(el.value)||0);
+    if(Object.keys(state.override[ds]).length===0) delete state.override[ds];
+    save(); renderOverrideTable(); renderSheet();
+  }));
+  t.querySelectorAll("[data-ovclear]").forEach(b=>b.addEventListener("click",()=>{
+    delete state.override[b.dataset.ovclear]; save(); renderOverrideTable(); renderSheet();
+  }));
+}
+
+/* ============================================================
+   GENERATOR
+   Hard constraints always respected during assignment:
+   - 希望休 => never assigned
+   - 当直 only if canNight; respects nightMax
+   - night today => tomorrow forced off; can't work day after a night
+   - 社員以外: on their 当直 day they ONLY do 当直 (no day/late same day)
+   - 社員: may do 日勤 then 当直 same day
+   - one person, one shift per day (except emp day+night)
+   - 遅番/日勤 only if capable
+   Scored / soft (surfaced as warnings if unmet):
+   - exact target work days
+   - daily required counts (we try to fill; unfilled => warning)
+   - >=1 employee per day
+   - non-employee late <= monthly cap
+   - balance (variance of workload)
+============================================================ */
+function generate(){
+  const dates=monthDates();
+  if(state.people.length===0){ alert("先にメンバーを追加してください。"); return; }
+  let best=null, bestScore=Infinity;
+  const attempts=420;
+  for(let a=0;a<attempts;a++){
+    const res=attemptBuild(dates, a);
+    const sc=scoreSchedule(res, dates);
+    if(sc<bestScore){ bestScore=sc; best=res; if(sc===0) break; }
+  }
+  state.schedule=best;
+  save(); renderSheet();
+}
+
+function shuffle(arr,seed){ // simple seeded-ish shuffle
+  let a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(rand(seed,i)* (i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+let _r=12345;
+function rand(seed,salt){ _r=(_r*1103515245+12345+ (seed||0)*97 + (salt||0)*7)&0x7fffffff; return _r/0x7fffffff; }
+
+function computeNightQuota(dates){
+  // 月内に必要な当直の総数
+  let T=0; dates.forEach(ds=>{ T+=reqFor(ds).night; });
+  const quota={}; state.people.forEach(p=>quota[p.id]=0);
+  // group に amount 回ぶんを各人の上限まで均等(ラウンドロビン)に配る。配れた数を返す
+  const distribute=(group, amount)=>{
+    let remaining=amount, progress=true;
+    while(remaining>0 && progress){
+      progress=false;
+      for(const p of group){
+        if(remaining<=0) break;
+        if(quota[p.id] < p.nightMax){ quota[p.id]++; remaining--; progress=true; }
+      }
+    }
+    return amount-remaining;
+  };
+  const specialists=state.people.filter(p=>p.canNight && p.spec && p.nightMax>0);
+  const fillins    =state.people.filter(p=>p.canNight && !p.spec && p.nightMax>0);
+  let remaining=T;
+  remaining-=distribute(specialists, remaining); // まず専門で埋める
+  remaining-=distribute(fillins, remaining);     // 足りない分だけ、それ以外が上限の範囲で
+  // remaining>0 は人手不足ぶん（埋まらず＝赤で表示）
+  return {quota, T};
+}
+
+function attemptBuild(dates, seed){
+  const sched={}; dates.forEach(ds=>sched[ds]={});
+  const forcedOff={};                 // pid -> Set(ds) (post-night next day)
+  const worked={}, nights={}, nonLate={};
+  state.people.forEach(p=>{worked[p.id]=0;nights[p.id]=0;nonLate[p.id]=0;});
+  const lateCapNon=state.nonEmpLateMax;
+
+  const can=(p,ds,shift)=>{
+    if(isOff(p.id,ds)) return false;
+    if(forcedOff[p.id]&&forcedOff[p.id].has(ds)) return false;
+    if(shift==="day"&&!p.canDay) return false;
+    if(shift==="late"&&!p.canLate) return false;
+    if(shift==="night"&&!p.canNight) return false;
+    return true;
+  };
+  const assignedToday=(ds,pid)=> sched[ds][pid];
+  const place=(ds,pid,shift)=>{
+    sched[ds][pid]=shift; worked[pid]=(worked[pid]||0)+1;
+    if(shift==="night"){
+      nights[pid]++;
+      const nd=nextDate(ds);
+      if(nd){ (forcedOff[pid]||(forcedOff[pid]=new Set())).add(nd); }
+    }
+  };
+
+  // remaining capacity helper (how far below target) — used to prioritize under-target people
+  const need=(p)=> p.target - worked[p.id];
+
+  // 連続を短くするための補助：前日まで何日連続で勤務／休みが続いているか
+  const trailWork=(pid,ds)=>{ let n=0,cur=prevDate(ds); while(cur){ if(sched[cur][pid]){n++;cur=prevDate(cur);} else break; } return n; };
+  const trailOff =(pid,ds)=>{ let n=0,cur=prevDate(ds); while(cur){ if(!sched[cur][pid]){n++;cur=prevDate(cur);} else break; } return n; };
+  // 休みが続いている人ほど大きい＝出勤させて休みの連続を断つ／昨日働いた人ほど小さい＝出勤の連続を断つ
+  const restScore=(pid,ds)=> trailOff(pid,ds) - trailWork(pid,ds);
+  // その日に入れると前後どちらが勤務になっているか（孤立した日ほど小さい＝連続を作らない）
+  const neighborLoad=(pid,ds)=>{ const pv=prevDate(ds),nx=nextDate(ds); return (pv&&sched[pv][pid]?1:0)+(nx&&sched[nx][pid]?1:0); };
+
+  // ---- PASS 1: 当直 (night) ---- 月全体に等間隔で散らす（毎日「ペースより遅れている人」を選ぶ）
+  const {quota:nightQuota}=computeNightQuota(dates);
+  const D=dates.length;
+  for(let i=0;i<dates.length;i++){
+    const ds=dates[i];
+    const r=reqFor(ds);
+    const pv=prevDate(ds), nx=nextDate(ds);
+    for(let k=0;k<r.night;k++){
+      // 候補：当直可・割当回数が個人の配分内・前後日が当直でない・休み等でない
+      let cands=state.people.filter(p=>p.canNight
+        && nightQuota[p.id]>0
+        && nights[p.id] < nightQuota[p.id]
+        && !assignedToday(ds,p.id)
+        && can(p,ds,"night")
+        && !(forcedOff[p.id]&&forcedOff[p.id].has(ds))
+        && !(pv && sched[pv][p.id]==="night")   // 前日が当直でない
+        && !(nx && sched[nx][p.id]==="night")    // 翌日が当直でない
+      );
+      if(cands.length===0) continue;
+      cands=shuffle(cands,seed+1+i);
+      cands.sort((x,y)=>{
+        const mx=isMust(y.id,ds)-isMust(x.id,ds); if(mx) return mx;
+        // この時点で本来あるべき当直数 = 配分 * (経過日 / 月の日数)
+        const defX = nightQuota[x.id]*((i+1)/D) - nights[x.id];
+        const defY = nightQuota[y.id]*((i+1)/D) - nights[y.id];
+        if(defY!==defX) return defY-defX;        // 遅れている人を優先
+        return nights[x.id]-nights[y.id];
+      });
+      place(ds,cands[0].id,"night");
+    }
+  }
+
+  // ---- PASS 2: 遅番 (late) ----
+  for(const ds of orderDates(dates, seed+5)){
+    const r=reqFor(ds);
+    for(let k=0;k<r.late;k++){
+      let cands=state.people.filter(p=>p.canLate
+        && !assignedToday(ds,p.id)
+        && can(p,ds,"late"));
+      // non-employee monthly late cap
+      cands=cands.filter(p=> p.kind==="emp" || nonLate[p.id] < lateCapNon);
+      if(cands.length===0) continue;
+      cands=shuffle(cands,seed+6);
+      cands.sort((x,y)=>{
+        // employees first (遅番は基本社員)
+        const e=(x.kind==="emp"?0:1)-(y.kind==="emp"?0:1); if(e) return e;
+        const mx=isMust(y.id,ds)-isMust(x.id,ds); if(mx) return mx;
+        const rs=restScore(y.id,ds)-restScore(x.id,ds); if(rs) return rs; // 休みが続く人を優先・連勤を避ける
+        const nd=need(y)-need(x); if(nd) return nd;
+        return worked[x.id]-worked[y.id];
+      });
+      const pick=cands[0];
+      place(ds,pick.id,"late");
+      if(pick.kind==="non") nonLate[pick.id]++;
+    }
+  }
+
+  // ---- PASS 3: 日勤 (day) — fill minimum r.day ----
+  for(const ds of orderDates(dates, seed+9)){
+    const r=reqFor(ds);
+    const cur=Object.values(sched[ds]).filter(s=>s==="day").length;
+    for(let k=cur;k<r.day;k++){
+      let cands=dayCandidates(sched,ds,can,assignedToday);
+      if(cands.length===0) continue;
+      cands=shuffle(cands,seed+10);
+      // ensure at least one employee present that day: if no emp assigned yet & employees available, prefer emp
+      const hasEmp=Object.entries(sched[ds]).some(([pid,s])=> s && personById(pid) && personById(pid).kind==="emp");
+      cands.sort((x,y)=>{
+        if(!hasEmp){ const e=(x.kind==="emp"?0:1)-(y.kind==="emp"?0:1); if(e) return e; }
+        const mx=isMust(y.id,ds)-isMust(x.id,ds); if(mx) return mx;
+        const rs=restScore(y.id,ds)-restScore(x.id,ds); if(rs) return rs; // 休みが続く人を優先・連勤を避ける
+        const nd=need(y)-need(x); if(nd) return nd;
+        return worked[x.id]-worked[y.id];
+      });
+      place(ds,cands[0].id,"day");
+    }
+  }
+
+  // ---- PASS 4: satisfy must-work not yet placed ----
+  for(const p of state.people){
+    for(const ds of (state.mustWork[p.id]||[])){
+      if(!dates.includes(ds)) continue;
+      if(sched[ds][p.id]) continue;
+      if(forcedOff[p.id]&&forcedOff[p.id].has(ds)) continue; // can't, day after night
+      // try day, then late (respecting caps/capability), within dayMax
+      const r=reqFor(ds);
+      const dayCnt=Object.values(sched[ds]).filter(s=>s==="day").length;
+      if(p.canDay && can(p,ds,"day") && dayCnt<r.dayMax){ place(ds,p.id,"day"); continue; }
+      if(p.canLate && can(p,ds,"late") && (p.kind==="emp"||nonLate[p.id]<lateCapNon)){ place(ds,p.id,"late"); if(p.kind==="non")nonLate[p.id]++; continue; }
+      if(p.canNight && can(p,ds,"night") && nights[p.id]<p.nightMax){ place(ds,p.id,"night"); continue; }
+      // leave unplaced -> will show as warning (must-work unmet)
+    }
+  }
+
+  // ---- PASS 5: tune toward exact target (extra 日勤 up to dayMax for under-target people) ----
+  // Add day shifts where capacity exists to lift under-target people; respect dayMax & ≥? employees.
+  let guard=0;
+  let changed=true;
+  while(changed && guard++<dates.length*6){
+    changed=false;
+    const under=state.people.filter(p=>worked[p.id]<p.target);
+    if(under.length===0) break;
+    under.sort((x,y)=> (y.target-worked[y.id])-(x.target-worked[x.id]));
+    for(const p of under){
+      if(!p.canDay) continue;
+      // p が日勤を足せる日を集め、前後が休みの「孤立した日」を優先（連勤を作らない）
+      const order=orderDates(dates, seed+guard);
+      let feas=[];
+      for(const ds of order){
+        const r=reqFor(ds);
+        const dayCnt=Object.values(sched[ds]).filter(s=>s==="day").length;
+        if(dayCnt>=r.dayMax) continue;
+        if(sched[ds][p.id]) continue;
+        if(!can(p,ds,"day")) continue;
+        feas.push(ds);
+      }
+      if(feas.length===0) continue;
+      feas.sort((a,b)=> neighborLoad(p.id,a)-neighborLoad(p.id,b));
+      place(feas[0],p.id,"day"); changed=true; break;
+    }
+  }
+
+  // ---- PASS 6: reduce over-target by swapping to under-target where possible ----
+  guard=0; changed=true;
+  while(changed && guard++<dates.length*6){
+    changed=false;
+    const over=state.people.filter(p=>worked[p.id]>p.target);
+    const under=state.people.filter(p=>worked[p.id]<p.target);
+    if(over.length===0||under.length===0) break;
+    outer:
+    for(const o of over){
+      for(const ds of orderDates(dates,seed+guard+1)){
+        const s=sched[ds][o.id];
+        if(!s||s==="night") continue; // don't move night casually (spacing)
+        // find an under person who can take this shift on this day and is free
+        for(const u of under){
+          if(u.id===o.id) continue;
+          if(sched[ds][u.id]) continue;
+          if(s==="day"&&!u.canDay) continue;
+          if(s==="late"&&!u.canLate) continue;
+          if(isOff(u.id,ds)) continue;
+          if(forcedOff[u.id]&&forcedOff[u.id].has(ds)) continue;
+          if(s==="late"&&u.kind==="non"&&nonLate[u.id]>=lateCapNon) continue;
+          // do swap: remove from o, give to u
+          delete sched[ds][o.id]; worked[o.id]--;
+          if(s==="late"&&o.kind==="non") nonLate[o.id]=Math.max(0,nonLate[o.id]-1);
+          sched[ds][u.id]=s; worked[u.id]++;
+          if(s==="late"&&u.kind==="non") nonLate[u.id]++;
+          changed=true; break outer;
+        }
+      }
+    }
+  }
+
+  return sched;
+}
+
+function dayCandidates(sched,ds,can,assignedToday){
+  return state.people.filter(p=> p.canDay && !assignedToday(ds,p.id) && can(p,ds,"day"));
+}
+function orderDates(dates, seed){ return shuffle(dates, seed); }
+function nextDate(ds){
+  const [y,m,d]=ds.split("-").map(Number);
+  const nd=new Date(y,m-1,d+1);
+  if(nd.getMonth()+1!==m) return null; // next month -> ignore (boundary)
+  return dstr(nd.getFullYear(),nd.getMonth()+1,nd.getDate());
+}
+function prevDate(ds){
+  const [y,m,d]=ds.split("-").map(Number);
+  if(d===1) return null;
+  return dstr(y,m,d-1);
+}
+
+function scoreSchedule(sched, dates){
+  let score=0;
+  const worked={},nights={},nonLate={};
+  state.people.forEach(p=>{worked[p.id]=0;nights[p.id]=0;nonLate[p.id]=0;});
+  dates.forEach(ds=>{
+    Object.entries(sched[ds]).forEach(([pid,s])=>{
+      worked[pid]++; if(s==="night")nights[pid]++;
+      const p=personById(pid); if(p&&p.kind==="non"&&s==="late") nonLate[pid]++;
+    });
+    const r=reqFor(ds);
+    const cnt={day:0,late:0,night:0};
+    let empPresent=false;
+    Object.entries(sched[ds]).forEach(([pid,s])=>{ if(cnt[s]!=null)cnt[s]++; const p=personById(pid); if(p&&p.kind==="emp")empPresent=true;});
+    // unmet minimums (heavy)
+    score += Math.abs(cnt.day - clamp(cnt.day, r.day, r.dayMax))*40;
+    if(cnt.day<r.day) score+=(r.day-cnt.day)*120;
+    if(cnt.day>r.dayMax) score+=(cnt.day-r.dayMax)*120;
+    score += Math.abs(cnt.late-r.late)*150;
+    score += Math.abs(cnt.night-r.night)*200;
+    if(!empPresent) score+=300;
+  });
+  // exact target
+  state.people.forEach(p=>{ score += Math.abs(worked[p.id]-p.target)*60; });
+  // non-emp late cap
+  state.people.forEach(p=>{ if(p.kind==="non"&&nonLate[p.id]>state.nonEmpLateMax) score+=(nonLate[p.id]-state.nonEmpLateMax)*80; });
+  // must-work unmet
+  state.people.forEach(p=>{ (state.mustWork[p.id]||[]).forEach(ds=>{ if(dates.includes(ds)&&!sched[ds][p.id]) score+=200; }); });
+  // 連続を最短に：前日と同じ状態（連勤 or 連休）が続くたびに減点
+  state.people.forEach(p=>{
+    let sameAdj=0;
+    for(let i=1;i<dates.length;i++){
+      const wa=!!sched[dates[i-1]][p.id];   // 前日 勤務?
+      const wb=!!sched[dates[i]][p.id];     // 当日 勤務?
+      if(wa===wb) sameAdj++;                // 両方勤務 or 両方休み = 連続
+    }
+    score += sameAdj*5;
+  });
+  return score;
+}
+function clamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
+
+document.getElementById("gen-btn").addEventListener("click",generate);
+document.getElementById("clear-btn").addEventListener("click",()=>{
+  if(!confirm("シフト表を空にしますか？")) return;
+  state.schedule={}; save(); renderSheet();
+});
+
+/* ============================================================
+   RENDER: SHEET
+============================================================ */
+function updateSheetLabel(){
+  document.getElementById("sheet-month-label").textContent=`${state.year}年 ${state.month}月`;
+}
+function renderSheet(){
+  updateSheetLabel();
+  const wrap=document.getElementById("sheet-wrap");
+  if(state.people.length===0){ wrap.innerHTML=`<p class="muted" style="padding:14px">メンバーを追加してください。</p>`; document.getElementById("issues-area").innerHTML=""; return; }
+  const dates=monthDates();
+  const {issues, badCells, counts, workedByP, shortDays} = analyze(dates);
+
+  // header
+  let h=`<table class="grid"><thead><tr><th class="name">名前</th>`;
+  dates.forEach(ds=>{
+    const [y,m,d]=ds.split("-").map(Number); const wd=weekday(y,m,d);
+    const short=shortDays.has(ds);
+    h+=`<th class="${wd===0?'sun':wd===6?'sat':''}${short?' short':''}">${d}<br><span style="font-weight:400">${WD[wd]}</span>${short?'<br><span class="shortmark">不足</span>':''}</th>`;
+  });
+  h+=`<th class="name" style="left:auto;border-left:2px solid var(--line)">出勤<br>/目標</th></tr></thead><tbody>`;
+
+  // people rows
+  state.people.forEach(p=>{
+    h+=`<tr><td class="name">${escapeHtml(p.name)}<br><span class="tag ${p.kind}">${p.kind==="emp"?"社員":"外"}</span></td>`;
+    dates.forEach(ds=>{
+      const v=getSched(ds,p.id);
+      const off=isOff(p.id,ds), must=isMust(p.id,ds);
+      const cls=v?SHIFTS[v].cls:(off?"cell-off":"cell-empty");
+      const reqMark=must?" cell-req":"";
+      const bad=badCells.has(ds+"|"+p.id)?" cell-bad":"";
+      h+=`<td class="${reqMark}${bad}"><select class="cell ${cls}" data-ds="${ds}" data-pid="${p.id}">`;
+      const opts = p.kind==="emp" ? ["","day","late","night","daynight","off"] : ["","day","late","night","off"];
+      opts.forEach(s=>{
+        const lab= s===""?"—":SHIFTS[s].label;
+        h+=`<option value="${s}" ${v===s?"selected":""}>${lab}</option>`;
+      });
+      h+=`</select></td>`;
+    });
+    const wk=workedByP[p.id]||0; const diff=wk-p.target;
+    const dc= diff===0?"ok":"bad";
+    h+=`<td class="countcell ${dc}" style="border-left:2px solid var(--line);font-weight:700">${wk}/${p.target}${diff!==0?` (${diff>0?"+":""}${diff})`:""}</td>`;
+    h+=`</tr>`;
+  });
+
+  // count rows (日勤/遅番/当直/社員在否)
+  const sumRow=(key,label,checker)=>{
+    let r=`<tr><td class="name req">${label}</td>`;
+    dates.forEach(ds=>{
+      const c=counts[ds][key];
+      const req=reqFor(ds);
+      let bad=false;
+      if(key==="day") bad = c<req.day || c>req.dayMax;
+      else if(key==="late") bad = c!==req.late;
+      else if(key==="night") bad = c!==req.night;
+      else if(key==="emp") bad = c<1;
+      r+=`<td class="req countcell ${bad?'bad':'ok'}">${c}</td>`;
+    });
+    r+=`<td class="req"></td></tr>`;
+    return r;
+  };
+  h+=sumRow("day","日勤 数");
+  h+=sumRow("late","遅番 数");
+  h+=sumRow("night","当直 数");
+  h+=sumRow("emp","社員 在");
+  h+=`</tbody></table>`;
+  wrap.innerHTML=h;
+
+  wrap.querySelectorAll("select.cell").forEach(sel=>{
+    sel.addEventListener("change",()=>{
+      setSched(sel.dataset.ds, sel.dataset.pid, sel.value);
+      save(); renderSheet();
+    });
+  });
+
+  // issues panel
+  const ia=document.getElementById("issues-area");
+  if(issues.length===0){
+    ia.innerHTML=`<div class="good">✓ すべての条件を満たしています（必要人数・出勤日数ぴったり・当直翌日休み 等）。</div>`;
+  }else{
+    ia.innerHTML=`<div class="issues"><h3>⚠ 要確認 ${issues.length}件（赤いセル・赤い数字を直してください）</h3><ul>${issues.map(i=>`<li>${i}</li>`).join("")}</ul></div>`;
+  }
+}
+
+function analyze(dates){
+  const issues=[]; const badCells=new Set(); const shortDays=new Set();
+  const counts={}; const worked={}; const nights={}; const nonLate={};
+  state.people.forEach(p=>{worked[p.id]=0;nights[p.id]=0;nonLate[p.id]=0;});
+
+  // map of who did night, to check next-day off and pre-night for non-emp
+  dates.forEach(ds=>{
+    counts[ds]={day:0,late:0,night:0,emp:0};
+    Object.entries(state.schedule[ds]||{}).forEach(([pid,s])=>{
+      const p=personById(pid); if(!p)return;
+      if(s==="daynight"){ counts[ds].day++; counts[ds].night++; }
+      else if(counts[ds][s]!=null) counts[ds][s]++;
+      worked[pid]++;
+      if(s==="night"||s==="daynight")nights[pid]++;
+      if(p.kind==="emp"&&s) counts[ds].emp++;
+      if(p.kind==="non"&&s==="late") nonLate[pid]++;
+    });
+  });
+
+  // daily requirement checks
+  dates.forEach(ds=>{
+    const r=reqFor(ds); const c=counts[ds];
+    const [y,m,d]=ds.split("-").map(Number); const tag=`${m}/${d}`;
+    if(c.night!==r.night){ issues.push(`${tag}：当直が ${c.night}人（必要${r.night}人）`); shortDays.add(ds); }
+    if(c.late!==r.late){ issues.push(`${tag}：遅番が ${c.late}人（必要${r.late}人）`); shortDays.add(ds); }
+    if(c.day<r.day){ issues.push(`${tag}：日勤が ${c.day}人（最低${r.day}人）`); shortDays.add(ds); }
+    if(c.day>r.dayMax){ issues.push(`${tag}：日勤が ${c.day}人（最大${r.dayMax}人）`); shortDays.add(ds); }
+    if(c.emp<1){ issues.push(`${tag}：社員が1人もいない`); shortDays.add(ds); }
+  });
+
+  // per-person constraint checks
+  state.people.forEach(p=>{
+    // exact target
+    if(worked[p.id]!==p.target) issues.push(`${p.name}：出勤 ${worked[p.id]}日（目標${p.target}日）`);
+    // night max
+    if(nights[p.id]>p.nightMax) issues.push(`${p.name}：当直 ${nights[p.id]}回（上限${p.nightMax}回）`);
+    // non-emp late cap
+    if(p.kind==="non"&&nonLate[p.id]>state.nonEmpLateMax) issues.push(`${p.name}：遅番 ${nonLate[p.id]}回（社員以外の上限${state.nonEmpLateMax}回）`);
+    // requested off violated
+    (state.requestedOff[p.id]||[]).forEach(ds=>{
+      if(!dates.includes(ds))return;
+      const s=getSched(ds,p.id);
+      if(s&&s!=="off"){ const [_,m,d]=ds.split("-"); issues.push(`${p.name}：${(+m)}/${(+d)} は希望休なのに勤務が入っています`); badCells.add(ds+"|"+p.id);}
+    });
+    // must-work unmet
+    (state.mustWork[p.id]||[]).forEach(ds=>{
+      if(!dates.includes(ds))return;
+      const s=getSched(ds,p.id);
+      if(!s||s==="off"){ const [_,m,d]=ds.split("-"); issues.push(`${p.name}：${(+m)}/${(+d)} は必ず出勤の日ですが入っていません`); badCells.add(ds+"|"+p.id);}
+    });
+    // night -> next day must be off ; and capability checks ; non-emp pre-night
+    dates.forEach(ds=>{
+      const s=getSched(ds,p.id); if(!s||s==="off")return;
+      if(s==="day"&&!p.canDay){issues.push(`${p.name}：日勤に入れない設定なのに ${fmt(ds)} に日勤`);badCells.add(ds+"|"+p.id);}
+      if(s==="late"&&!p.canLate){issues.push(`${p.name}：遅番に入れない設定なのに ${fmt(ds)} に遅番`);badCells.add(ds+"|"+p.id);}
+      if(s==="night"&&!p.canNight){issues.push(`${p.name}：当直に入れない設定なのに ${fmt(ds)} に当直`);badCells.add(ds+"|"+p.id);}
+      if(s==="daynight"&&(!p.canDay||!p.canNight)){issues.push(`${p.name}：${fmt(ds)} の日+当は日勤・当直の両方ができる必要があります`);badCells.add(ds+"|"+p.id);}
+      if(s==="daynight"&&p.kind!=="emp"){issues.push(`${p.name}：${fmt(ds)} 日+当（日勤して当直）は社員のみ`);badCells.add(ds+"|"+p.id);}
+      if(s==="night"||s==="daynight"){
+        const nd=nextDate(ds);
+        if(nd){
+          const ns=getSched(nd,p.id);
+          if(ns&&ns!=="off"){issues.push(`${p.name}：${fmt(ds)} 当直の翌日（${fmt(nd)}）が休みになっていません`);badCells.add(nd+"|"+p.id);}
+        }
+      }
+    });
+  });
+
+  return {issues, badCells, counts, workedByP:worked, shortDays};
+}
+function fmt(ds){const[_,m,d]=ds.split("-");return `${(+m)}/${(+d)}`;}
+
+/* ============================================================
+   TABS + INIT
+============================================================ */
+document.getElementById("tabs").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return;
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.getElementById("panel-"+b.dataset.tab).classList.add("active");
+  if(b.dataset.tab==="sheet") renderSheet();
+  if(b.dataset.tab==="req") renderOverrideTable();
+  if(b.dataset.tab==="month") renderCalendar();
+});
+
+function init(){
+  renderPeople();
+  renderMonthControls();
+  renderCalPersonSelect();
+  renderDefaultReq();
+  renderOverrideTable();
+  renderSheet();
+}
+init();
+</script>
+</body>
+</html>
